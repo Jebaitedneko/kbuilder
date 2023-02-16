@@ -1,0 +1,33 @@
+version: v1.0
+name: kbuilder
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu2004
+  containers:
+    - name: main
+      image: 'ubuntu:22.04'
+blocks:
+ - name: kbuilder
+   task:
+      secrets:
+        - name: api-keys
+      jobs:
+        - name: build
+          commands:
+            - sudo apt-get update -yqq
+            - sudo apt-get install --no-install-recommends -yqq bc flex bison cpio zip unzip curl ca-certificates python2
+            - curl -LSsO http://ftp.us.debian.org/debian/pool/main/e/elfutils/libdebuginfod-common_0.187-1~bpo11+1_all.deb
+            - sudo dpkg --force-all -i libdebuginfod-common*.deb
+            - curl -LSsO http://ftp.us.debian.org/debian/pool/main/e/elfutils/libdebuginfod1_0.187-1~bpo11+1_amd64.deb
+            - sudo dpkg --force-all -i libdebuginfod1*.deb
+            - sudo ln -svf /usr/lib/x86_64-linux-gnu/libdebuginfod.so.1 /usr/lib/libdebuginfod.so.1
+            - sudo ln -svf /usr/lib/x86_64-linux-gnu/libdebuginfod-0.187.so /usr/lib/libdebuginfod-0.187.so
+            - rm -rf ./*.deb
+            - git clone --depth=1 --single-branch https://github.com/cyberknight777/gcc-arm64 ~/.local/gcc64
+            - git clone --depth=1 --single-branch https://github.com/cyberknight777/gcc-arm ~/.local/gcc32
+            - git clone --depth=1 --single-branch https://github.com/orges/android_kernel_xiaomi_vayu -b topaz-orges kernel
+            - cd kernel
+            - sed -i "s/gcc-compat/gcc-compat -std=gnu99/g" drivers/kernelsu/Makefile
+            - sed -i "s/\$(nproc)/16/g" ./build.sh
+            - ./build.sh gcc+upload+pix+tel
